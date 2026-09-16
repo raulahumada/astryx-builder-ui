@@ -17,8 +17,10 @@
     "@astryxdesign/core": "^0.6.2",
     "@astryxdesign/theme-neutral": "^0.6.2",
     "@heroicons/react": "^2.2.0",
+    "@mastra/core": "^1.67.0",
     "@stylexjs/stylex": "^0.19.1",
     "next": "16.3.5",
+    "nunjucks": "^3.2.4",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
@@ -28,6 +30,7 @@
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.7",
     "@types/node": "^20",
+    "@types/nunjucks": "^3.2.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^4.7.0",

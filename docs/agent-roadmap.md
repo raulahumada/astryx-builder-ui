@@ -138,3 +138,5 @@ Decisión de stack: **runtime del agente en Node (Mastra o AI SDK)**; FastAPI qu
 1. Cerrar Paso 0 (mock).
 2. Abrir change OpenSpec del Paso 1 (`/opsx:propose` o equivalente).
 3. Ejecutar spike del Paso 2 en una rama corta con criterio de éxito binario: **compila y se ve**.
+
+Nota: [AST-4](https://linear.app/systhema/issue/AST-4/agente-con-mastra) aterriza el scaffold Mastra + prompts Nunjucks + fallback OpenAI→Anthropic **sin** codegen (`frontend/src/mastra/`, `POST /api/agent/chat`).
