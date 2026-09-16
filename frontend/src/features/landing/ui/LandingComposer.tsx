@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@astryxdesign/core/Button";
 import { ChatComposer } from "@astryxdesign/core/Chat";
 import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
@@ -14,7 +15,15 @@ import {
   type SuggestionChip,
 } from "../model/suggestions";
 
+function newChatId(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `chat-${Date.now().toString(36)}`;
+}
+
 export function LandingComposer() {
+  const router = useRouter();
   const [value, setValue] = useState("");
   const [modelId, setModelId] = useState(DEFAULT_MODEL_ID);
   const [setIndex, setSetIndex] = useState(0);
@@ -31,12 +40,21 @@ export function LandingComposer() {
     setSetIndex((current) => (current + 1) % SUGGESTION_SETS.length);
   };
 
+  const startChat = (prompt: string) => {
+    const trimmed = prompt.trim();
+    if (!trimmed) {
+      return;
+    }
+    const params = new URLSearchParams({ prompt: trimmed });
+    router.push(`/chats/${newChatId()}?${params.toString()}`);
+  };
+
   return (
     <VStack gap={4} width="100%">
       <ChatComposer
         value={value}
         onChange={setValue}
-        onSubmit={() => {}}
+        onSubmit={startChat}
         placeholder="Ask Astryx to build..."
         footerActions={
           <DropdownMenu
