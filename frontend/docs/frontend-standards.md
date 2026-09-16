@@ -180,7 +180,14 @@ app/  →  features/*  →  entities/*  →  shared/*
 - Nombres que digan el dominio (`ProjectCanvas`, no `DataView2`).
 - Funciones pequeñas; early return; evitar abstracciones prematuras.
 - No `any`; preferir types de `model/` / `entities/` (archivos aparte).
-- Colocar tests junto al feature (`features/chat/lib/formatTitle.test.ts`, `ui/….test.tsx`) cuando exista harness (Vitest/Playwright).
+- Colocar tests junto al feature (`features/chat/lib/formatTitle.test.ts`, `ui/….test.tsx`).
+- E2E de flujos/rutas en `frontend/e2e/<feature>.spec.ts` (Playwright).
+- Comandos (desde `frontend/`):
+  - `npm test` — Vitest (unit/component)
+  - `npm run test:watch` — Vitest watch
+  - `npm run test:e2e` — Playwright
+  - `npm run test:e2e:ui` — Playwright UI mode
+- Preferir tests de `lib/` / `model/` para lógica pura; Playwright para rutas y flujos. RTL (`*.test.tsx`) cuando la UI del feature tenga lógica propia (no para re-testear el Design System).
 - ESLint (`npm run lint`) limpio en el cambio.
 - Commits/PRs solo si el usuario lo pide (ver root `AGENTS.md`).
 
@@ -195,3 +202,4 @@ app/  →  features/*  →  entities/*  →  shared/*
 - [ ] ¿Cumple Astryx + design guideline?
 - [ ] ¿Tipos de API sin inventar contratos?
 - [ ] ¿Server vs Client justificado?
+- [ ] ¿Hay Vitest y/o Playwright para el comportamiento nuevo/cambiado (`npm test`, `npm run test:e2e` si aplica)?

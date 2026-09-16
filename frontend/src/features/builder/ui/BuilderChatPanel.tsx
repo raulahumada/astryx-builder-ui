@@ -11,7 +11,6 @@ import {
 } from "@astryxdesign/core/Chat";
 import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
 import { Icon } from "@astryxdesign/core/Icon";
-import { BuilderActivityFeed } from "./BuilderActivityFeed";
 import {
   BUILDER_ICONS,
   BUILDER_MODEL_OPTIONS,
@@ -19,10 +18,8 @@ import {
   MOCK_COMPOSER_PLACEHOLDER,
   MOCK_USER_PROMPT,
 } from "../model/mock-session";
-
-type BuilderChatPanelProps = {
-  initialPrompt?: string;
-};
+import type { BuilderChatPanelProps } from "../model/types";
+import { BuilderActivityFeed } from "./BuilderActivityFeed";
 
 export function BuilderChatPanel({
   initialPrompt,

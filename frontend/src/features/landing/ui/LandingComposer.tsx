@@ -7,20 +7,14 @@ import { ChatComposer } from "@astryxdesign/core/Chat";
 import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
 import { Icon } from "@astryxdesign/core/Icon";
 import { HStack, VStack } from "@astryxdesign/core/Layout";
+import { buildChatSessionHref } from "../lib/build-chat-href";
 import {
   DEFAULT_MODEL_ID,
   LANDING_ICONS,
   MODEL_OPTIONS,
   SUGGESTION_SETS,
-  type SuggestionChip,
 } from "../model/suggestions";
-
-function newChatId(): string {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
-  }
-  return `chat-${Date.now().toString(36)}`;
-}
+import type { SuggestionChip } from "../model/types";
 
 export function LandingComposer() {
   const router = useRouter();
@@ -41,12 +35,11 @@ export function LandingComposer() {
   };
 
   const startChat = (prompt: string) => {
-    const trimmed = prompt.trim();
-    if (!trimmed) {
+    const href = buildChatSessionHref(prompt);
+    if (!href) {
       return;
     }
-    const params = new URLSearchParams({ prompt: trimmed });
-    router.push(`/chats/${newChatId()}?${params.toString()}`);
+    router.push(href);
   };
 
   return (

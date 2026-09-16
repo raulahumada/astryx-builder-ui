@@ -98,7 +98,7 @@ Load only what the ticket needs. Do not dump the whole repo into context.
 | OpenSpec | `openspec/changes/`, `openspec/specs/` |
 | Agent rules | `AGENTS.md`, `frontend/AGENTS.md` |
 
-Enhanced stories must reference concrete paths (`frontend/src/…`, `backend/app/…`), Server vs Client Components, Astryx imports (`@astryxdesign/core/*`), and test expectations when relevant (add Vitest/Playwright only if the repo already uses them; otherwise say “add tests when the harness exists”).
+Enhanced stories must reference concrete paths (`frontend/src/…`, `backend/app/…`), Server vs Client Components, Astryx imports (`@astryxdesign/core/*`), and test expectations when relevant (front: Vitest colocated under `features/<capability>/` and/or Playwright under `frontend/e2e/`; back: pytest when that harness exists).
 
 When the story implies a non-trivial change, note that `/opsx:propose` should include tasks for:
 

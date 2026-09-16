@@ -15,10 +15,7 @@ import {
   BUILDER_ICONS,
   MOCK_PROJECT_TITLE,
 } from "../model/mock-session";
-
-type BuilderTopBarProps = {
-  projectTitle?: string;
-};
+import type { BuilderTopBarProps } from "../model/types";
 
 export function BuilderTopBar({
   projectTitle = MOCK_PROJECT_TITLE,

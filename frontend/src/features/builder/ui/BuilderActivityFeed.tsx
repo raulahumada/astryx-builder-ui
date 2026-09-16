@@ -10,14 +10,15 @@ import { Text } from "@astryxdesign/core/Text";
 import {
   BUILDER_ICONS,
   MOCK_TIMELINE,
-  type MockTimelineEvent,
 } from "../model/mock-session";
+import type {
+  MockResultEvent,
+  MockThoughtEvent,
+  MockTimelineEvent,
+  MockToolEvent,
+} from "../model/types";
 
-function ThoughtEvent({
-  event,
-}: {
-  event: Extract<MockTimelineEvent, { kind: "thought" }>;
-}) {
+function ThoughtEvent({ event }: { event: MockThoughtEvent }) {
   return (
     <Collapsible
       defaultIsOpen={event.defaultOpen ?? Boolean(event.body)}
@@ -38,11 +39,7 @@ function ThoughtEvent({
   );
 }
 
-function ToolEvent({
-  event,
-}: {
-  event: Extract<MockTimelineEvent, { kind: "tool" }>;
-}) {
+function ToolEvent({ event }: { event: MockToolEvent }) {
   return (
     <Item
       density="compact"
@@ -53,11 +50,7 @@ function ToolEvent({
   );
 }
 
-function ResultEvent({
-  event,
-}: {
-  event: Extract<MockTimelineEvent, { kind: "result" }>;
-}) {
+function ResultEvent({ event }: { event: MockResultEvent }) {
   return (
     <Card padding={3} elevation="none" width="100%">
       <VStack gap={2} width="100%">

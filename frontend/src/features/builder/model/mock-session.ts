@@ -1,4 +1,3 @@
-import type { ComponentType, SVGProps } from "react";
 import {
   ArrowPathIcon,
   ArrowUturnLeftIcon,
@@ -16,8 +15,10 @@ import {
   SparklesIcon,
   Squares2X2Icon,
 } from "@heroicons/react/24/outline";
-
-export type HeroIcon = ComponentType<SVGProps<SVGSVGElement>>;
+import type {
+  BuilderModelOption,
+  MockTimelineEvent,
+} from "./types";
 
 export const BUILDER_BRAND = "Astryx";
 
@@ -28,29 +29,12 @@ export const MOCK_USER_PROMPT = "Landing page of lawyer";
 export const MOCK_ASSISTANT_PLAN =
   "I'll shape this into a polished lawyer landing page with a credible, editorial feel, then fit it into the existing app structure.";
 
-/** Short title for the top bar from a user prompt (mock, no backend). */
-export function projectTitleFromPrompt(prompt: string): string {
-  const trimmed = prompt.trim().replace(/\s+/g, " ");
-  if (!trimmed) {
-    return MOCK_PROJECT_TITLE;
-  }
-  if (trimmed.length <= 48) {
-    return trimmed;
-  }
-  return `${trimmed.slice(0, 45)}…`;
-}
-
 export const MOCK_COMPOSER_PLACEHOLDER = "Ask a follow-up...";
 
 export const MOCK_PREVIEW_EMPTY =
   "Your Astryx generation will show here.";
 
 export const MOCK_PREVIEW_PATH = "/";
-
-export type BuilderModelOption = {
-  id: string;
-  label: string;
-};
 
 export const BUILDER_MODEL_OPTIONS: BuilderModelOption[] = [
   { id: "astryx", label: "Astryx" },
@@ -59,34 +43,6 @@ export const BUILDER_MODEL_OPTIONS: BuilderModelOption[] = [
 ];
 
 export const DEFAULT_BUILDER_MODEL_ID = BUILDER_MODEL_OPTIONS[0].id;
-
-export type MockResultFile = {
-  name: string;
-  path: string;
-  icon: HeroIcon;
-};
-
-export type MockTimelineEvent =
-  | {
-      id: string;
-      kind: "thought";
-      durationLabel: string;
-      body?: string;
-      defaultOpen?: boolean;
-    }
-  | {
-      id: string;
-      kind: "tool";
-      label: string;
-      icon: HeroIcon;
-    }
-  | {
-      id: string;
-      kind: "result";
-      title: string;
-      version: string;
-      files: MockResultFile[];
-    };
 
 /** Process feed for the builder chat sidebar (static mock). */
 export const MOCK_TIMELINE: MockTimelineEvent[] = [

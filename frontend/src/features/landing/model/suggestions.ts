@@ -1,4 +1,3 @@
-import type { ComponentType, SVGProps } from "react";
 import {
   ArrowPathIcon,
   ChartBarIcon,
@@ -8,20 +7,7 @@ import {
   PuzzlePieceIcon,
   SparklesIcon,
 } from "@heroicons/react/24/outline";
-
-export type HeroIcon = ComponentType<SVGProps<SVGSVGElement>>;
-
-export type SuggestionChip = {
-  id: string;
-  label: string;
-  prompt: string;
-  icon: HeroIcon;
-};
-
-export type ModelOption = {
-  id: string;
-  label: string;
-};
+import type { ModelOption, SuggestionChip } from "./types";
 
 export const MODEL_OPTIONS: ModelOption[] = [
   { id: "astryx", label: "Astryx" },

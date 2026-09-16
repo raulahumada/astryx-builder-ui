@@ -4,18 +4,12 @@ import {
   LayoutContent,
   LayoutPanel,
 } from "@astryxdesign/core/Layout";
+import { projectTitleFromPrompt } from "../lib/project-title";
+import { MOCK_USER_PROMPT } from "../model/mock-session";
+import type { BuilderPageProps } from "../model/types";
 import { BuilderChatPanel } from "./BuilderChatPanel";
 import { BuilderPreviewCanvas } from "./BuilderPreviewCanvas";
 import { BuilderTopBar } from "./BuilderTopBar";
-import {
-  MOCK_USER_PROMPT,
-  projectTitleFromPrompt,
-} from "../model/mock-session";
-
-type BuilderPageProps = {
-  chatId: string;
-  initialPrompt?: string;
-};
 
 export function BuilderPage({
   chatId,

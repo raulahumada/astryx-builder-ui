@@ -20,7 +20,11 @@ context: |
   - providers.tsx already has Theme(neutralTheme, mode="system") + LinkProvider(Next Link). Do not re-add.
   - globals.css already imports reset.css + astryx.css + theme-neutral/theme.css. Do not duplicate.
   - Back: backend/app/main.py only. GET / → {message}; GET /health → {status:"ok"}. No domain/application/presentation/infrastructure yet.
-  - No backend/docs/api/api-*.md yet. No Vitest/Playwright in frontend/package.json. No .codegraph/ index.
+  - No backend/docs/api/api-*.md yet. No .codegraph/ index.
+  - Frontend test harness (AST-3): Vitest + Testing Library + Playwright in frontend/.
+    Scripts: `npm test` / `npm run test:watch` (unit), `npm run test:e2e` / `test:e2e:ui` (Playwright).
+    Colocate unit tests as `features/<capability>/**/*.test.ts(x)`; E2E under `frontend/e2e/<feature>.spec.ts`.
+    Configs: `frontend/vitest.config.ts`, `frontend/playwright.config.ts`, setup `frontend/src/test/setup.ts`.
 
   Docs to read (progressive, only what the change needs):
   - AGENTS.md (always)
@@ -35,8 +39,10 @@ context: |
   - Surfaces (name one before designing): marketing/landing | document/settings | app/dashboard | builder/tool | chat/agent | loose component | ecommerce/gallery | auth/empty/error.
 
   Frontend architecture (Screaming Architecture):
-  - First real UI change MUST introduce features/<capability>/{ui,hooks,api,model,index.ts}.
+  - First real UI change MUST introduce features/<capability>/{ui,hooks,api,model,index.ts}; add lib/ when there are pure helpers.
   - app/ is thin: routes/layouts/wiring only. page.tsx imports the feature; no business logic, no fetch.
+  - Types live in features/<x>/model/types.ts (or model/types/*.ts), not inside UI .tsx (except local Props). Shared domain types → entities/<name>/types.ts.
+  - Reusable pure functions → features/<x>/lib/ (or shared/lib/ if ≥2 features); do not bury them in JSX components.
   - No technical drawers at src root (components/, hooks/, services/, utils/, types/).
   - Server Components by default; "use client" at the lowest island.
   - Feature adapters live in features/<x>/api/; they call REAL FastAPI routes only.
@@ -61,7 +67,8 @@ context: |
   Cross-cutting:
   - Front feature api adapter ↔ back use case; name both. CORS/auth/env only if the change needs them.
   - Mock/UI-only changes: zero backend files, zero new endpoints, no features/<x>/api/.
-  - Tests: add Vitest/Playwright (front) or pytest (back) only when the change introduces a harness or the repo already has one. Until then, say so in tasks; lint (`npm run lint` / backend checks) still applies.
+  - Tests (front): harness EXISTS — Vitest + Playwright. Front feature changes MUST add/update colocated Vitest and/or Playwright coverage for changed behavior; map tasks to spec scenarios. Run `npm test` and relevant `npm run test:e2e` before marking UI tasks done.
+  - Tests (back): add pytest only when the change introduces a harness or the repo already has one. Until then, say so in tasks; lint (`npm run lint` / backend checks) still applies.
   - Commits/PRs only if the user asks. No secrets, .venv, .env.
 
 rules:
@@ -76,7 +83,7 @@ rules:
     - "UI-only mocks: explicit Non-goal = no backend, no generate/chat API"
   design:
     - "Technical design only (not the product visual guide); still must comply with design_guideline + Astryx"
-    - "Frontend: map to features/<capability>/{ui,hooks,api,model} and the thin app/ route; name Server vs Client files"
+    - "Frontend: map to features/<capability>/{ui,hooks,api,model,lib?} and the thin app/ route; name Server vs Client files; types in model/types*, helpers in lib/"
     - "Do not design dumping templates under app/<template-name>"
     - "Backend: map to CA layers and concrete modules; ports/adapters explicit; first business endpoint introduces the slice"
     - "Cross-cutting API: endpoints, ownership (feature api adapter <-> use case), CORS/auth/env"
@@ -87,14 +94,16 @@ rules:
     - "Do not specify invented HTTP payloads; align with existing FastAPI or a contract newly designed in design.md"
     - "UI requirements: name visible copy, regions, and Astryx components; include a11y labels for icon-only controls"
     - "Mock-only: scenarios must not require network or backend"
+    - "Front scenarios should be coverable by Vitest (lib/model) and/or Playwright (routes/flows)"
   tasks:
     - "Break into small, ordered, checkable tasks (prefer <= ~2h each)"
     - "Separate front vs back vs docs/OpenSpec tasks"
     - "Front tasks must name feature paths; back tasks must name CA layers/files"
     - "First UI task: Astryx discovery (astryx build/template/component/docs layout) before writing JSX"
     - "Include OpenAPI / api-*.md updates when the HTTP contract changes"
-    - "Tests: per frontend-standards / backend-standards when harness exists; otherwise a task that states no harness — skip tests rather than inventing Vitest/Playwright"
-    - "Include npm run lint (frontend) for UI changes"
+    - "Front feature changes: include Vitest and/or Playwright tasks (colocated `*.test.ts(x)` and/or `e2e/<feature>.spec.ts`); never say skip for lack of harness"
+    - "Back: tests per backend-standards when pytest harness exists; otherwise a task that states no harness — skip rather than inventing pytest"
+    - "Include npm run lint (frontend) for UI changes; include `npm test` (and e2e when UI flows change)"
     - "Do not add a backend task on UI-mock changes"
 
 operations:
@@ -106,6 +115,7 @@ operations:
       - "First backend business route: introduce CA layers, do not append to main.py"
       - "Do not call non-existent APIs; mock-only means no fetch"
       - "Verify UI in the browser (or closest substitute) before marking UI tasks done"
+      - "Run `npm test` and, for route/flow changes, `npm run test:e2e` in frontend/ before marking front tasks done"
       - "Do not commit or open a PR unless the user asked"
   archive:
     guidance:

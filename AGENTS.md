@@ -29,6 +29,8 @@ openspec/     Spec-Driven Development (cambios, specs, archive)
 npm run dev          # http://localhost:3000
 npm run build
 npm run lint
+npm test             # Vitest (unit/component)
+npm run test:e2e     # Playwright (feature flows)
 ```
 
 **Backend** (desde `backend/`):
