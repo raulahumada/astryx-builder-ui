@@ -1,0 +1,114 @@
+schema: spec-driven
+
+# Injected into openspec instructions as artifact `context` (constraints for the AI — do not copy into files).
+context: |
+  Product: Astryx — UI builder (v0-like). Monorepo. Linear workspace Systhema, keys AST-*.
+  Schema: spec-driven. Changes → openspec/changes/; specs → openspec/specs/ (both empty until first propose).
+  Change folder naming: ALWAYS the Linear issue id lowercased (AST-1 → ast-1, AST-12 → ast-12).
+  Never use descriptive kebab names (landing-ui-mock). No Linear id → ask for AST-* before proposing.
+
+  Stack (do not invent versions or deps):
+  - frontend/: Next.js 16.3.5 App Router, React 19.2.8, TypeScript strict, paths @/* → src/*
+  - UI: @astryxdesign/core + @astryxdesign/theme-neutral ^0.6.2 (164 components)
+  - CLI: ALWAYS `npx astryx <cmd>` from frontend/ — never `npx @astryxdesign/cli`
+  - backend/: FastAPI 0.141.1 (fastapi[standard]), uvicorn port 8000
+  - CORS: http://localhost:3000 only. Dev front: http://localhost:3000 (`npm run dev` in frontend/)
+
+  As-is (scaffold — treat as current truth until a change lands):
+  - Front files: frontend/src/app/{layout.tsx,page.tsx,providers.tsx,globals.css} only. NO features/ yet.
+  - page.tsx is a placeholder (Heading/Text/Button inside raw <main> + px) — replace, do not grow it.
+  - providers.tsx already has Theme(neutralTheme, mode="system") + LinkProvider(Next Link). Do not re-add.
+  - globals.css already imports reset.css + astryx.css + theme-neutral/theme.css. Do not duplicate.
+  - Back: backend/app/main.py only. GET / → {message}; GET /health → {status:"ok"}. No domain/application/presentation/infrastructure yet.
+  - No backend/docs/api/api-*.md yet. No Vitest/Playwright in frontend/package.json. No .codegraph/ index.
+
+  Docs to read (progressive, only what the change needs):
+  - AGENTS.md (always)
+  - docs/design_guideline.md — product look (v0 on Neutral). NOT the OpenSpec design.md.
+  - frontend/AGENTS.md + frontend/docs/frontend-standards.md — Screaming Architecture
+  - backend/docs/backend-standards.md — Clean Architecture
+  - Next APIs: frontend/node_modules/next/dist/docs/ (this Next may differ from training)
+
+  Brand (design_guideline §1 — confirmed):
+  - UI name: Astryx. Theme: Neutral. Mode: system. Accent: Neutral blue (--color-accent).
+  - Do not copy v0/Vercel black CTAs, purple-AI glow, or override --color-* in :root.
+  - Surfaces (name one before designing): marketing/landing | document/settings | app/dashboard | builder/tool | chat/agent | loose component | ecommerce/gallery | auth/empty/error.
+
+  Frontend architecture (Screaming Architecture):
+  - First real UI change MUST introduce features/<capability>/{ui,hooks,api,model,index.ts}.
+  - app/ is thin: routes/layouts/wiring only. page.tsx imports the feature; no business logic, no fetch.
+  - No technical drawers at src root (components/, hooks/, services/, utils/, types/).
+  - Server Components by default; "use client" at the lowest island.
+  - Feature adapters live in features/<x>/api/; they call REAL FastAPI routes only.
+  - Do NOT scaffold Astryx templates into app/<template-name> (e.g. src/app/ai-chat-landing). Templates are reference; adapt into features/.
+
+  UI / Astryx (discover, don't guess):
+  - Order: `npx astryx build "<idea>"` → `template <name>` (study, don't dump) → `component <Name>` → `docs layout` before any page.
+  - Also: template --list, component --list, search "<query>", docs tokens|theme|styling|principles|motion.
+  - Frame first: Layout / AppShell / ChatLayout per surface. No layout <div>. Stacks/Grid own spacing.
+  - Props first; else style/className with var(--color-*|--spacing-*|--radius-*). No raw hex/px except structural region widths (contentWidth, SideNav 240–280, panel 340–420).
+  - No Tailwind / Astryx utility classes / xstyle. Dense data = Table/List/Item, never Card-as-row. Badge = counts; status = StatusDot/Token.
+  - Chat zero-state / prompt landing: closest template is `ai-chat-landing` (Layout height="fill" contentWidth={720} + ChatComposer). Pair footer model selector + mic with `ChatComposerFooterActions`. Strip template extras (greeting, category toggles, ClickableCards, @mentions, slash commands, attachment drawer, Settings, useChatDictation) unless the change asks for them.
+  - Suggestion chips = Button (secondary, sm), not Token/Card. Visual mic = Button/IconButton; do not wire SpeechRecognition unless the change is real dictation.
+  - Icons: @heroicons/react/24/outline (as templates do).
+
+  Backend architecture (Clean Architecture):
+  - First business endpoint MUST introduce layers — do not grow god-main.py:
+    domain/{models,errors,ports} → application/<capability>/use_case → presentation/api/<capability>/{routes,schemas} → infrastructure; main.py + dependencies.py = composition root.
+  - Thin routers; use cases in application; ports in domain; adapters in infrastructure.
+  - HTTP contract = existing FastAPI/OpenAPI only. Document new routes in FastAPI (+ backend/docs/api/api-*.md when that dir exists). NEVER invent request/response shapes in specs.
+
+  Cross-cutting:
+  - Front feature api adapter ↔ back use case; name both. CORS/auth/env only if the change needs them.
+  - Mock/UI-only changes: zero backend files, zero new endpoints, no features/<x>/api/.
+  - Tests: add Vitest/Playwright (front) or pytest (back) only when the change introduces a harness or the repo already has one. Until then, say so in tasks; lint (`npm run lint` / backend checks) still applies.
+  - Commits/PRs only if the user asks. No secrets, .venv, .env.
+
+rules:
+  proposal:
+    - Keep proposals under ~500 words when possible
+    - Include Non-goals
+    - Cite the Linear issue (AST-*) that owns this change folder
+    - Name the surface (landing / app / builder / chat / …) and side(s) (front / back)
+    - Reference the standards docs that apply (frontend-standards, backend-standards, design_guideline)
+    - "If UI: name the Astryx template/kit (astryx build) and what will be stripped vs kept"
+    - "If API: list candidate routes only after checking backend/app (today only GET / and GET /health)"
+    - "UI-only mocks: explicit Non-goal = no backend, no generate/chat API"
+  design:
+    - "Technical design only (not the product visual guide); still must comply with design_guideline + Astryx"
+    - "Frontend: map to features/<capability>/{ui,hooks,api,model} and the thin app/ route; name Server vs Client files"
+    - "Do not design dumping templates under app/<template-name>"
+    - "Backend: map to CA layers and concrete modules; ports/adapters explicit; first business endpoint introduces the slice"
+    - "Cross-cutting API: endpoints, ownership (feature api adapter <-> use case), CORS/auth/env"
+    - "Call out decisions and alternatives rejected (incl. discarded Astryx templates/components)"
+    - "List real component imports (@astryxdesign/core/...) discovered via CLI — never invented names"
+  specs:
+    - "Requirements and scenarios must be testable"
+    - "Do not specify invented HTTP payloads; align with existing FastAPI or a contract newly designed in design.md"
+    - "UI requirements: name visible copy, regions, and Astryx components; include a11y labels for icon-only controls"
+    - "Mock-only: scenarios must not require network or backend"
+  tasks:
+    - "Break into small, ordered, checkable tasks (prefer <= ~2h each)"
+    - "Separate front vs back vs docs/OpenSpec tasks"
+    - "Front tasks must name feature paths; back tasks must name CA layers/files"
+    - "First UI task: Astryx discovery (astryx build/template/component/docs layout) before writing JSX"
+    - "Include OpenAPI / api-*.md updates when the HTTP contract changes"
+    - "Tests: per frontend-standards / backend-standards when harness exists; otherwise a task that states no harness — skip tests rather than inventing Vitest/Playwright"
+    - "Include npm run lint (frontend) for UI changes"
+    - "Do not add a backend task on UI-mock changes"
+
+operations:
+  apply:
+    guidance:
+      - "Implement only the change's tasks; no extra refactors or docs"
+      - "Re-run Astryx CLI before coding UI; do not invent components or CSS"
+      - "Keep app/ thin; put UI in features/<capability>/"
+      - "First backend business route: introduce CA layers, do not append to main.py"
+      - "Do not call non-existent APIs; mock-only means no fetch"
+      - "Verify UI in the browser (or closest substitute) before marking UI tasks done"
+      - "Do not commit or open a PR unless the user asked"
+  archive:
+    guidance:
+      - "Sync delta specs into openspec/specs/ before archive"
+      - "Summarize what landed vs Non-goals; do not archive if tasks are unchecked"
+      - "Keep the completion summary concise"
