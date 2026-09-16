@@ -22,11 +22,12 @@ Enrich a user story with complete, implementation-ready technical detail.
 
 2. **Load progressive context** (only what the story needs)
    - `AGENTS.md`, `openspec/config.yaml`
-   - UI: `frontend/AGENTS.md` + `docs/design_guideline.md` + `frontend/docs/frontend-standards.md` (Screaming Architecture) + Astryx CLI (`npx astryx …` from `frontend/`)
+   - UI: `frontend/AGENTS.md` + `docs/design_guideline.md` + `frontend/docs/frontend-standards.md` (Project Structure, Technology Stack, Coding / UI/UX / Testing / Configuration / Performance) + Astryx CLI (`npx astryx …` from `frontend/`)
+   - AI agent / Mastra: frontend-standards **AI agent (Mastra)** + `docs/agent-roadmap.md` + `frontend/src/mastra/` + `app/api/agent/…`
    - API: `backend/docs/backend-standards.md` (Clean Architecture) + `backend/app/` (+ OpenAPI / future `backend/docs/api/api-*.md` if present)
    - Prefer Codegraph when indexed; else Grep/Glob/Read
 
-3. **Judge completeness** against the skill checklist (functionality, fields, endpoints, **architecture paths**, files, DoD, docs/tests, OpenSpec follow-up, NFRs). Enhanced stories must name `features/<capability>/…` and/or CA layers when touching front/back.
+3. **Judge completeness** against the skill checklist (functionality, fields, endpoints, **architecture paths**, files, DoD, docs/**Testing Standards**, Mastra split if agent, OpenSpec follow-up, NFRs). Enhanced stories must name `features/<capability>/…` and/or CA layers when touching front/back; agent stories must name `src/mastra/` vs feature UI.
 
 4. **Output always**
    - `## Original`
@@ -42,5 +43,6 @@ Enrich a user story with complete, implementation-ready technical detail.
 
 - Do not invent API request/response shapes that are not in FastAPI code or API docs.
 - Do not invent Astryx components — discover with `npx astryx`.
+- Front enrichments must include test expectations (frontend-standards **Testing Standards**). Agent enrichments must follow **AI agent (Mastra)** — no UI under `src/mastra/`, no FastAPI LLM loop by default.
 - Write-back to Linear is off unless Linear mode / explicit ask.
 - Keep enrichment concise and implementation-ready for this monorepo (`frontend/` + `backend/`).

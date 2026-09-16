@@ -1,8 +1,9 @@
 import type { ChatSystemVars } from "@/mastra/prompts/types";
 
 export type ChatRequestBody = {
-  message?: unknown;
-  promptVars?: unknown;
+  messages?: unknown;
+  /** Optional AI SDK trigger passthrough */
+  trigger?: unknown;
 };
 
 export type PromptVarsResolution =

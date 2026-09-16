@@ -29,12 +29,14 @@ context: |
   Docs to read (progressive, only what the change needs):
   - AGENTS.md (always)
   - docs/design_guideline.md — product look (v0 on Neutral). NOT the OpenSpec design.md.
-  - frontend/AGENTS.md + frontend/docs/frontend-standards.md — Screaming Architecture
+  - frontend/AGENTS.md + frontend/docs/frontend-standards.md — Project Structure, Technology Stack, Coding / UI/UX / Testing / Configuration / Performance, AI agent (Mastra)
+  - docs/agent-roadmap.md — when the change touches the agent / streaming / codegen path
   - backend/docs/backend-standards.md — Clean Architecture
   - Next APIs: frontend/node_modules/next/dist/docs/ (this Next may differ from training)
 
   Brand (design_guideline §1 — confirmed):
   - UI name: Astryx. Theme: Neutral. Mode: system. Accent: Neutral blue (--color-accent).
+  - UI copy language: English for now (español rioplatense is a deferred follow-up — do not migrate copy yet).
   - Do not copy v0/Vercel black CTAs, purple-AI glow, or override --color-* in :root.
   - Surfaces (name one before designing): marketing/landing | document/settings | app/dashboard | builder/tool | chat/agent | loose component | ecommerce/gallery | auth/empty/error.
 
@@ -67,7 +69,8 @@ context: |
   Cross-cutting:
   - Front feature api adapter ↔ back use case; name both. CORS/auth/env only if the change needs them.
   - Mock/UI-only changes: zero backend files, zero new endpoints, no features/<x>/api/.
-  - Tests (front): harness EXISTS — Vitest + Playwright. Front feature changes MUST add/update colocated Vitest and/or Playwright coverage for changed behavior; map tasks to spec scenarios. Run `npm test` and relevant `npm run test:e2e` before marking UI tasks done.
+  - AI agent (Mastra): runtime under frontend/src/mastra/ (agents, Nunjucks prompts, models); HTTP via thin app/api/agent/* Route Handlers; UI that consumes streams lives in features/<capability>/ — never under mastra/. Agent id for AI SDK: chat-agent (getAgentById). LLM loop stays in Node/Next — not FastAPI. See frontend-standards "AI agent (Mastra)" + docs/agent-roadmap.md.
+  - Tests (front): harness EXISTS — Vitest + Playwright. Follow frontend-standards "Testing Standards". Front feature changes MUST add/update colocated Vitest and/or Playwright coverage for changed behavior; map tasks to spec scenarios. Mastra helpers: Vitest under src/mastra/**. Mock agent routes in E2E (no live LLM in CI). Run `npm test` and relevant `npm run test:e2e` before marking UI tasks done.
   - Tests (back): add pytest only when the change introduces a harness or the repo already has one. Until then, say so in tasks; lint (`npm run lint` / backend checks) still applies.
   - Commits/PRs only if the user asks. No secrets, .venv, .env.
 
@@ -77,7 +80,7 @@ rules:
     - Include Non-goals
     - Cite the Linear issue (AST-*) that owns this change folder
     - Name the surface (landing / app / builder / chat / …) and side(s) (front / back)
-    - Reference the standards docs that apply (frontend-standards, backend-standards, design_guideline)
+    - Reference the standards docs that apply (frontend-standards sections: Project Structure, Technology Stack, Coding / UI/UX / Testing / Configuration / Performance, AI agent when relevant; backend-standards; design_guideline; agent-roadmap for agent work)
     - "If UI: name the Astryx template/kit (astryx build) and what will be stripped vs kept"
     - "If API: list candidate routes only after checking backend/app (today only GET / and GET /health)"
     - "UI-only mocks: explicit Non-goal = no backend, no generate/chat API"

@@ -13,6 +13,7 @@ Guía visual y de producto para este monorepo. **No** es el `design.md` de OpenS
 | Decisión | Valor | Notas |
 |----------|-------|-------|
 | Nombre de producto en UI | **Astryx** | Lockup final TBD si cambia el naming |
+| Idioma de UI | **Inglés** (por ahora) | Copy visible en EN. Español rioplatense = follow-up futuro, no migrar todavía. |
 | Theme package | `@astryxdesign/theme-neutral` | Fijo |
 | Modo por defecto | **`system`** (seguir OS) | Confirmado |
 | Accent | **Azul Neutral** (`--color-accent`) | Confirmado — no CTA “Vercel black” |

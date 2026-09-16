@@ -47,6 +47,7 @@ export type BuilderPageProps = {
 };
 
 export type BuilderChatPanelProps = {
+  chatId?: string;
   initialPrompt?: string;
 };
 

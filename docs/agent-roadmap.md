@@ -70,6 +70,8 @@ Decisión de stack: **runtime del agente en Node (Mastra o AI SDK)**; FastAPI qu
 
 **Objetivo:** reemplazar mock estático de activity/mensajes por eventos del agent.
 
+**Parcial (AST-5):** composer → `useChat` → `POST /api/agent/chat` (AI SDK UI Message Stream) muestra texto del assistant. Tools reales y preview siguen pendientes.
+
 **Hecho cuando:**
 - Composer dispara generate.
 - Activity feed refleja tools reales.

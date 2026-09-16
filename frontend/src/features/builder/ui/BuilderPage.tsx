@@ -15,7 +15,6 @@ export function BuilderPage({
   chatId,
   initialPrompt,
 }: BuilderPageProps) {
-  void chatId;
   const prompt = initialPrompt?.trim() || MOCK_USER_PROMPT;
 
   return (
@@ -38,7 +37,7 @@ export function BuilderPage({
             label="Chat"
             role="complementary"
           >
-            <BuilderChatPanel initialPrompt={prompt} />
+            <BuilderChatPanel chatId={chatId} initialPrompt={initialPrompt} />
           </LayoutPanel>
         }
         content={

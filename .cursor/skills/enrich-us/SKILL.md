@@ -31,10 +31,11 @@ Follow these steps:
    - Files/modules to modify according to architecture and best practices:
      - Frontend → Screaming Architecture paths under `features/<capability>/…` (see `frontend/docs/frontend-standards.md`)
      - Backend → Clean Architecture layers `domain` / `application` / `presentation` / `infrastructure` (see `backend/docs/backend-standards.md`)
+     - AI agent / Mastra (when the ticket touches chat agent, prompts, models, or agent HTTP) → `frontend/src/mastra/` + thin `app/api/agent/…` + feature UI that consumes the stream — **not** UI inside `mastra/` (see frontend-standards **AI agent (Mastra)**)
    - Definition of done (implementation and delivery steps)
-   - Documentation and test updates (OpenSpec artifacts, API docs if applicable)
+   - Documentation and **test** updates: OpenSpec artifacts; front Vitest colocated +/o Playwright E2E per frontend-standards **Testing Standards**; API docs if applicable
    - OpenSpec follow-up: whether `/opsx:propose` should create a change and which artifacts (proposal / design / tasks / specs)
-   - Non-functional requirements (security, performance, observability, CORS, etc.)
+   - Non-functional requirements (security, performance, observability, CORS, env keys for agents, etc.)
 5. If the story lacks enough technical detail for autonomous implementation, provide an improved version that is clearer, more specific, and concise, aligned with step 4. Load only the project context relevant to the ticket as described below. Return the result in markdown.
 6. Output format must always include:
    - `## Original`
@@ -69,43 +70,54 @@ Load only what the ticket needs. Do not dump the whole repo into context.
 4. **Frontend / UI stories:**
    - Read `frontend/AGENTS.md` (Next.js + Astryx rules).
    - Read `docs/design_guideline.md` (v0-like product look on Astryx Neutral) — cite relevant sections in `## Enhanced`.
-   - Read `frontend/docs/frontend-standards.md` (Screaming Architecture + code practices) — name concrete `features/<capability>/…` paths in `## Enhanced`.
+   - Read `frontend/docs/frontend-standards.md` end-to-end sections that apply: **Project Structure**, **Technology Stack**, **Coding Standards**, **UI/UX Standards**, **Testing Standards**, **Configuration Standards**, **Performance Best Practices** — name concrete `features/<capability>/…` paths **and** Vitest/Playwright expectations in `## Enhanced`.
    - Discover UI via Astryx CLI from `frontend/`: `npx astryx build "<idea>"`, `npx astryx docs layout`, `npx astryx component <Name>`, `npx astryx search "<query>"`.
    - Reference concrete paths under `frontend/src/` (thin `app/` + `features/`). Do not propose dumping logic into `app/page.tsx` or technical-only folders (`components/`, `hooks/` at root).
    - Enforce Astryx constraints in the enhanced story: no layout `<div>`, tokens only, Theme/LinkProvider already in `providers.tsx`; frame-first; cards only for standalone widgets.
-5. **Backend / API stories:**
+   - **UI copy language:** keep **English** for now (`docs/design_guideline.md` + frontend-standards UI/UX). Español rioplatense is deferred — do not propose a locale migration in enrichments unless the ticket is explicitly about that.
+5. **AI agent / Mastra stories** (chat agent, prompts, models, streaming, AI SDK bridge, codegen later):
+   - Read `frontend/docs/frontend-standards.md` **AI agent (Mastra)** (+ Technology Stack / Service Layer) and `docs/agent-roadmap.md` (only the pasos that apply).
+   - In `## Enhanced`, name concrete paths: `src/mastra/{index,agents,prompts,models}/`, Route Handler(s) under `app/api/agent/…`, and the **feature** that owns UI (`features/builder/…`, etc.). Do **not** put UI under `mastra/`.
+   - Name HTTP contract (Next-only today — e.g. `POST /api/agent/chat`), AI SDK vs plain stream if relevant, env vars (`.env.example` / Configuration Standards), and agent id (`chat-agent` / `getAgentById`).
+   - Tests: Vitest under `src/mastra/**` and/or feature `lib/`; Playwright with **mocked** agent route when the story is UI — no live LLM required in DoD/CI unless the ticket explicitly asks for a manual smoke (Testing Standards).
+   - Non-goals: do not invent FastAPI ownership of the LLM loop; cite roadmap if codegen/tools/preview are out of scope.
+6. **Backend / API stories:**
    - Read `backend/docs/backend-standards.md` (Clean Architecture + FastAPI practices) — name layers and files (`presentation/…`, `application/…`, `domain/…`, `infrastructure/…`) in `## Enhanced`.
    - Read `backend/app/` as it exists today; if still scaffold-only (`main.py`), the enhanced story must describe the first Clean Architecture slice to introduce — do not grow a god-`main.py`.
    - Contract source of truth: existing FastAPI routes + OpenAPI (`/docs` when running). Do **not** invent request/response shapes.
    - If API markdown contracts appear later (e.g. `backend/docs/api/api-*.md`), list that directory and read matching files in full.
-6. **Cross-cutting frontend ↔ API:**
+7. **Cross-cutting frontend ↔ API:**
    - Name concrete endpoints, methods, payloads, status codes, and which Next.js layer calls them (Server Component, Route Handler, `features/<x>/api`).
    - Note CORS (`backend` allows `http://localhost:3000` today) and any env vars needed.
    - Keep front feature adapters and back use cases aligned; mention both standards docs when the story spans both sides.
-7. Reuse Linear issue and team-status results already present in the active conversation. Do not repeat catalog calls without a concrete missing field.
+   - Agent chat is **Next Route Handler**, not FastAPI — do not invent a FastAPI chat proxy unless the ticket requires it.
+8. Reuse Linear issue and team-status results already present in the active conversation. Do not repeat catalog calls without a concrete missing field.
 
 ## Architecture anchors (this repo)
 
 | Area | Path / note |
 |------|-------------|
-| Frontend standards | `frontend/docs/frontend-standards.md` (Screaming Architecture) |
+| Frontend standards | `frontend/docs/frontend-standards.md` (Project Structure, Technology Stack, Coding / UI/UX / Testing / Configuration / Performance, **AI agent (Mastra)**) |
 | Backend standards | `backend/docs/backend-standards.md` (Clean Architecture) |
 | Design guideline | `docs/design_guideline.md` |
+| Agent roadmap | `docs/agent-roadmap.md` |
 | Frontend app (thin) | `frontend/src/app/` |
 | Frontend features | `frontend/src/features/<capability>/` (target) |
+| Mastra runtime | `frontend/src/mastra/` (agents, prompts, models) — no UI here |
+| Agent HTTP | `frontend/src/app/api/agent/…` (Next Route Handlers) |
 | Astryx providers | `frontend/src/app/providers.tsx` |
 | Backend API | `backend/app/` → CA layers as code grows |
-| OpenSpec | `openspec/changes/`, `openspec/specs/` |
+| OpenSpec | `openspec/changes/`, `openspec/specs/` (incl. `mastra-chat-agent`) |
 | Agent rules | `AGENTS.md`, `frontend/AGENTS.md` |
 
-Enhanced stories must reference concrete paths (`frontend/src/…`, `backend/app/…`), Server vs Client Components, Astryx imports (`@astryxdesign/core/*`), and test expectations when relevant (front: Vitest colocated under `features/<capability>/` and/or Playwright under `frontend/e2e/`; back: pytest when that harness exists).
+Enhanced stories must reference concrete paths (`frontend/src/…`, `backend/app/…`), Server vs Client Components, Astryx imports (`@astryxdesign/core/*`), and **test expectations** when relevant (front: Vitest colocated under `features/<capability>/` and/or `src/mastra/**`, Playwright under `frontend/e2e/` — Testing Standards; back: pytest when that harness exists). Agent stories must also name `mastra/` vs feature UI split (AI agent (Mastra)).
 
 When the story implies a non-trivial change, note that `/opsx:propose` should include tasks for:
 
-- Implementation in frontend and/or backend
+- Implementation in frontend and/or backend (and/or `src/mastra/` + `app/api/agent/…`)
 - Spec/design updates under `openspec/`
-- API documentation if new routes are added (prefer documenting in FastAPI + any `backend/docs/` that exists)
-
+- Vitest and/or Playwright tasks (never “skip for lack of harness” on front)
+- API documentation if new routes are added (prefer documenting in FastAPI + any `backend/docs/` that exists; agent routes stay Next-documented via OpenSpec)
 ## Notes
 
 - Do not require Linear when the user already provided full ticket content directly.

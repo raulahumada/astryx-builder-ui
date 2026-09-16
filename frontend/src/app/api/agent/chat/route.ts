@@ -1,12 +1,40 @@
+import { handleChatStream } from "@mastra/ai-sdk";
+import type { ChatStreamHandlerParams } from "@mastra/ai-sdk";
+import { createUIMessageStreamResponse } from "ai";
 import { NextResponse } from "next/server";
 
-import { createChatAgent } from "@/mastra/agents/chat-agent";
+import { mastra } from "@/mastra";
 
-import { resolvePromptVars } from "./resolve-prompt-vars";
+import { hasUsableChatMessages } from "./has-usable-chat-messages";
 import type { ChatRequestBody } from "./types";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
+
+const PROVIDER_ERROR =
+  "Agent generation failed. Check OPENAI_API_KEY / ANTHROPIC_API_KEY and try again.";
+
+function publicAgentError(err: unknown): string {
+  const raw = err instanceof Error ? err.message : String(err);
+  // Never echo secrets if a provider includes them in the message.
+  if (/api[_-]?key|sk-|sk-ant-|bearer/i.test(raw)) {
+    return PROVIDER_ERROR;
+  }
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return PROVIDER_ERROR;
+  }
+  // Keep UI concise; full detail stays in the server log.
+  return trimmed.length > 240 ? `${trimmed.slice(0, 240)}…` : trimmed;
+}
+
+function logAgentError(err: unknown) {
+  const message = err instanceof Error ? err.message : String(err);
+  console.error("[api/agent/chat]", message);
+  if (err instanceof Error && err.stack) {
+    console.error(err.stack);
+  }
+}
 
 export async function POST(request: Request) {
   let body: ChatRequestBody;
@@ -16,65 +44,42 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const message =
-    typeof body.message === "string" ? body.message.trim() : "";
-  if (!message) {
+  if (!hasUsableChatMessages(body.messages)) {
     return NextResponse.json(
-      { error: "message is required and must be a non-empty string" },
+      {
+        error: "messages is required and must include usable user text",
+      },
       { status: 400 },
     );
   }
 
-  const resolved = resolvePromptVars(body.promptVars);
-  if (!resolved.ok) {
-    return NextResponse.json({ error: resolved.error }, { status: 400 });
-  }
-
-  let agent;
   try {
-    agent = createChatAgent(resolved.vars);
+    // Mastra pins internal AI SDK v7 types that are structurally close but not
+    // identical to the app's `ai` package UIMessage — cast at the boundary.
+    const params = {
+      messages: body.messages,
+      ...(body.trigger === "submit-message" ||
+      body.trigger === "regenerate-message"
+        ? { trigger: body.trigger }
+        : {}),
+    } as ChatStreamHandlerParams;
+
+    const stream = await handleChatStream({
+      mastra,
+      agentId: "chat-agent",
+      version: "v7",
+      params,
+      onError: (err) => {
+        logAgentError(err);
+        return publicAgentError(err);
+      },
+    });
+
+    return createUIMessageStreamResponse({ stream });
   } catch (err) {
-    const messageText =
-      err instanceof Error ? err.message : "Failed to render system prompt";
-    return NextResponse.json({ error: messageText }, { status: 400 });
-  }
-
-  try {
-    const stream = await agent.stream(message);
-    const encoder = new TextEncoder();
-
-    const readable = new ReadableStream<Uint8Array>({
-      async start(controller) {
-        try {
-          for await (const chunk of stream.textStream) {
-            if (chunk) {
-              controller.enqueue(encoder.encode(chunk));
-            }
-          }
-          controller.close();
-        } catch {
-          controller.error(
-            new Error(
-              "Agent generation failed. Check OPENAI_API_KEY / ANTHROPIC_API_KEY and try again.",
-            ),
-          );
-        }
-      },
-    });
-
-    return new Response(readable, {
-      headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "Cache-Control": "no-cache, no-transform",
-        "X-Content-Type-Options": "nosniff",
-      },
-    });
-  } catch {
+    logAgentError(err);
     return NextResponse.json(
-      {
-        error:
-          "Agent generation failed. Check OPENAI_API_KEY / ANTHROPIC_API_KEY and try again.",
-      },
+      { error: publicAgentError(err) },
       { status: 500 },
     );
   }

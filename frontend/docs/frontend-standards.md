@@ -1,205 +1,334 @@
 # Frontend code standards
 
-Estándares de código para `frontend/`. **Arquitectura: Screaming Architecture** (las carpetas gritan el dominio del producto, no la tecnología).
+Code standards for `frontend/`. **Architecture: Screaming Architecture** (folders scream product domain, not technology).
 
-Complementa: `frontend/AGENTS.md` (Next + Astryx), `docs/design_guideline.md` (look), root `AGENTS.md`.
+**Complements:** `frontend/AGENTS.md` (Next + Astryx), `docs/design_guideline.md` (look), root `AGENTS.md`, `docs/agent-roadmap.md` (agent).  
+**Used by:** `/enrich-us`, `/opsx:propose`, `/opsx:apply` — cite concrete sections in stories and changes.
+
+## Index
+
+1. [Principles](#principles)
+2. [Project Structure](#project-structure)
+3. [Technology Stack](#technology-stack)
+   - [Core Technologies](#core-technologies)
+   - [UI Framework](#ui-framework)
+   - [State Management & Data Flow](#state-management--data-flow)
+   - [Testing Framework](#testing-framework)
+   - [Development Tools](#development-tools)
+4. [Coding Standards](#coding-standards)
+   - [Language and Naming Conventions](#language-and-naming-conventions)
+   - [File Naming](#file-naming)
+   - [Component Conventions](#component-conventions)
+   - [State Management](#state-management)
+   - [Service Layer Architecture](#service-layer-architecture)
+5. [UI/UX Standards](#uiux-standards)
+6. [Testing Standards](#testing-standards)
+7. [Configuration Standards](#configuration-standards)
+8. [Performance Best Practices](#performance-best-practices)
+9. [AI agent (Mastra)](#ai-agent-mastra)
+10. [Pre-merge checklist (front)](#pre-merge-checklist-front)
 
 ---
 
-## 1. Principios
+## Principles
 
-1. **Scream the domain** — al abrir `src/`, se debe entender *qué hace* el producto (`chat`, `projects`, `billing`), no solo ver `components/` / `hooks/` / `utils/`.
-2. **App Router delgado** — `src/app/` solo rutas, layouts y wiring. Cero lógica de negocio en page files.
-3. **Features dueñas de su UI** — pantallas, hooks y adaptadores de una capability viven juntos.
-4. **Types y lógica desacoplados** — types en `model/` (archivos aparte); funciones reutilizables en `lib/` / `model/` / `api/`, no embebidas en JSX.
-5. **Shared es el último recurso** — solo lo genuinamente transversal; si solo lo usa un feature, no va a `shared/`.
-6. **Astryx first** — UI vía DS; ver design guideline y CLI Astryx.
-7. **Server por defecto** — Client Components solo cuando hay estado, efectos o APIs del browser.
+1. **Scream the domain** — opening `src/` should reveal *what the product does* (`landing`, `builder`, …), not only `components/` / `hooks/`.
+2. **Thin App Router** — `src/app/` is routes, layouts, and wiring only.
+3. **Features own their UI** — screens, hooks, and adapters live together.
+4. **Decouple types and logic** — types in `model/`; helpers in `lib/` / `api/`, not embedded in JSX.
+5. **Shared is last resort** — only genuinely cross-cutting code.
+6. **Astryx first** — UI via Design System + design guideline.
+7. **Server by default** — `"use client"` only at the lowest necessary edge.
 
 ---
 
-## 2. Estructura objetivo (Screaming Architecture)
+## Project Structure
 
 ```text
-frontend/src/
-  app/                      # Next.js App Router (thin)
-    (marketing)/            # route groups por superficie si aplica
-    (app)/
-    api/                    # Route Handlers solo si hacen falta
-    layout.tsx
-    providers.tsx
-    globals.css
-
-  features/                 # ← aquí “grita” el producto
-    chat/
-      ui/                   # componentes de pantalla (solo presentación)
-      hooks/                # hooks del feature
-      api/                  # fetch/adapters hacia backend (solo este feature)
-      model/                # tipos + datos de dominio del feature (archivos separados)
-        types.ts            # o types/<name>.ts — types/interfaces/unions
-        mappers.ts          # DTO ↔ model (si aplica)
-        constants.ts        # copy/opciones estáticas del feature (si aplica)
-      lib/                  # funciones puras/reutilizables del feature (si aplica)
-      index.ts              # API pública del feature (re-exports controlados)
-    projects/
-      ui/
-      hooks/
-      api/
-      model/
-      lib/
+frontend/
+  e2e/                      # Playwright specs
+  src/
+    app/                    # Next.js App Router (thin)
+      api/agent/            # Agent Route Handlers (Node)
+      chats/[chatId]/      # Builder routes
+      layout.tsx
+      providers.tsx
+      globals.css
+    features/               # Screaming Architecture
+      <capability>/
+        ui/
+        hooks/
+        api/                # FastAPI adapters (when applicable)
+        model/              # types, constants, mappers, mocks
+        lib/                # pure helpers
+        index.ts
+    mastra/                 # AI agent runtime (NOT UI)
+      agents/
+      prompts/              # versioned *.njk
+      models/
       index.ts
-    …                       # una carpeta por capability
-
-  shared/                   # transversal (mínimo)
-    ui/                     # wrappers Astryx reutilizados por ≥2 features
-    lib/                    # funciones/helpers genuínamente transversales
-    config/
-    hooks/                  # hooks genuínamente globales
-
-  entities/                 # opcional: tipos de dominio estables compartidos
-    user/
-      types.ts
-    project/
-      types.ts
+    shared/                 # minimal cross-cutting
+    entities/               # shared domain types (≥2 features)
+    test/setup.ts           # Vitest setup
+  vitest.config.ts
+  playwright.config.ts
+  .env / .env.example
 ```
 
-### Qué va dónde
+### What goes where
 
-| Qué | Dónde |
-|-----|--------|
-| Ruta `/projects/[id]` | `app/.../page.tsx` importa desde `features/projects` |
-| Lista de proyectos + empty state | `features/projects/ui/` |
-| `useProjectsQuery` | `features/projects/hooks/` |
-| `GET /projects` client/server helper | `features/projects/api/` |
-| Types/`Project`/DTOs | `features/projects/model/types.ts` (o `entities/project/types.ts` si ≥2 features) |
-| Mappers DTO → model | `features/projects/model/mappers.ts` |
-| Helpers puros del feature (`formatProjectTitle`, …) | `features/projects/lib/` |
-| Helpers transversales (`parseQueryParam`, http base) | `shared/lib/` |
-| `Button` Astryx sin lógica | import directo `@astryxdesign/core/...` (no wrap inútil) |
+| What | Where |
+|------|--------|
+| Route `/chats/[id]` | `app/…/page.tsx` imports `features/builder` |
+| Screen / composer | `features/<x>/ui/` |
+| Chat / UI-state hook | `features/<x>/hooks/` |
+| FastAPI adapter | `features/<x>/api/` |
+| Types / mocks | `features/<x>/model/` |
+| Pure helpers | `features/<x>/lib/` |
+| Agent / prompts / models | `src/mastra/` |
+| HTTP to the LLM | `app/api/agent/…` |
+| E2E | `e2e/<feature>.spec.ts` |
 
-### Anti-estructura (evitar)
+### Anti-structure (avoid)
 
 ```text
-src/
-  components/     # cajón técnico
-  hooks/
-  services/
-  utils/
-  types/          # cajón global de types — usar model/ o entities/
+src/components/   src/hooks/   src/services/   src/utils/   src/types/
 ```
 
-Eso es *technical layering*. Migrar hacia `features/<capability>/…` a medida que crezca el código.
+That is *technical layering*. Prefer `features/<capability>/…`.
 
----
-
-## 3. Types en archivos aparte
-
-Los **types viven fuera de la UI**. No declarar `type` / `interface` de dominio (ni props compartidas no triviales) dentro de `.tsx` de pantalla salvo props locales de un solo componente (p. ej. `type Props = { … }` privado al archivo).
-
-| Caso | Dónde |
-|------|--------|
-| Types del feature (mensajes, sesión, opciones, eventos de timeline, …) | `features/<x>/model/types.ts` o `features/<x>/model/types/<name>.ts` |
-| Constantes tipadas / mocks estáticos | `features/<x>/model/` (p. ej. `constants.ts`, `mock-session.ts`) — importan types desde `types.ts` |
-| Types de dominio usados por ≥2 features | `entities/<name>/types.ts` |
-| Types solo del wire/API | junto al adapter en `features/<x>/api/` **o** en `model/types.ts` si el feature los reexpone |
-
-Reglas:
-
-1. Un archivo de types **no** mezcla JSX ni hooks.
-2. Nombrar archivos por dominio (`types.ts`, `types/session.ts`), no `interfaces.ts` genérico en la raíz de `src/`.
-3. Re-exportar desde `features/<x>/index.ts` solo lo que otros módulos deban consumir.
-4. La UI importa types desde `../model/...` (o `@/features/<x>` vía public API); no redefine shapes inline.
-
----
-
-## 4. Funciones desacopladas y reutilizables
-
-Extraer lógica reusable a **funciones puras** (o módulos sin JSX) en lugar de dejarla embebida en componentes.
-
-| Caso | Dónde |
-|------|--------|
-| Helper solo de un feature (`projectTitleFromPrompt`, `newChatId`, formatters) | `features/<x>/lib/<name>.ts` |
-| Mapper / normalizer de datos | `features/<x>/model/mappers.ts` |
-| Adapter HTTP | `features/<x>/api/<name>.ts` |
-| Usado por ≥2 features | `shared/lib/<name>.ts` (o `entities/` si es dominio) |
-
-Reglas:
-
-1. Si una función no necesita React (sin hooks, sin JSX), **no** vive en `ui/`.
-2. Preferir firma explícita y tipada (`(prompt: string) => string`) importable desde tests y otros módulos.
-3. No crear `shared/lib` “por si acaso”: subir solo cuando un segundo feature lo necesite (o quede claro de antemano).
-4. Handlers de UI (`onClick` locales, estado) pueden quedar en el componente; la **regla de negocio / transformación** que puedan reutilizar otros, afuera.
-5. Evitar god-files: un módulo `lib/` o `model/` enfocado, no un `utils.ts` cajón.
-
----
-
-## 5. Reglas de dependencia
+### Dependency rules
 
 ```text
 app/  →  features/*  →  entities/*  →  shared/*
                  ↘_______________↗
+mastra/  ←  app/api/agent/*   (runtime)
+features/*  →  consume streams via hooks; do not import UI from mastra/
 ```
 
-- `features/A` **no** importa internals de `features/B` (solo `features/B` public API vía `index.ts` si es inevitable; preferir subir a `entities/` o `shared/`).
-- `shared/` **nunca** importa `features/`.
-- `app/` no contiene fetch ni reglas de negocio.
-- `ui/` puede importar `model/`, `lib/`, `hooks/`, `api/`; **no** al revés (lib/model no importan componentes de `ui/`).
+- `features/A` must not import internals of `features/B` (only `index.ts` if unavoidable).
+- `shared/` never imports `features/`.
+- `ui/` may import `model/` / `lib/` / `hooks/` / `api/`; **not** the reverse.
 
 ---
 
-## 6. Next.js & React
+## Technology Stack
 
-- TypeScript `strict`; paths `@/*` → `src/*`.
-- Preferir Server Components; `"use client"` en el borde más bajo posible.
-- Data fetching en Server Components / Route Handlers cuando baste; client fetch solo para interactividad.
-- No filtrar secrets al client; env públicos solo `NEXT_PUBLIC_*`.
-- Links con el `Link` de Next vía `LinkProvider` (ya en `providers.tsx`).
-- Consultar docs locales de Next (`node_modules/next/dist/docs/`) ante APIs nuevas.
+### Core Technologies
+
+| Piece | Technology | Notes |
+|-------|------------|--------|
+| Framework | Next.js `16.3.5` (App Router) | Local docs: `node_modules/next/dist/docs/` |
+| UI lib | React `19.2.8` | Server Components by default |
+| Language | TypeScript strict | paths `@/*` → `src/*` |
+| Agent | Mastra (`@mastra/core`) + Nunjucks | Node-only; see [AI agent (Mastra)](#ai-agent-mastra) |
+| AI SDK bridge | `ai`, `@ai-sdk/react`, `@mastra/ai-sdk` | UI Message Stream ↔ builder |
+| Backend (monorepo) | FastAPI | Business domain only; **not** the LLM loop |
+
+### UI Framework
+
+| Piece | Technology |
+|-------|------------|
+| Design System | `@astryxdesign/core` + `@astryxdesign/theme-neutral` `^0.6.2` |
+| CLI | `npx astryx <cmd>` from `frontend/` |
+| Icons | `@heroicons/react/24/outline` |
+| Theme / Link | `Theme` + `LinkProvider` in `app/providers.tsx` |
+| Base CSS | `reset.css` + `astryx.css` + `theme-neutral/theme.css` in `globals.css` |
+
+**No** invented Tailwind utilities, and no raw hex/px (except structural layout widths). See [UI/UX Standards](#uiux-standards) and `docs/design_guideline.md`.
+
+### State Management & Data Flow
+
+| Case | Approach |
+|------|----------|
+| Server data | Server Components / `searchParams` / props from `page.tsx` |
+| Local UI (composer, dropdown) | `useState` in Client Components |
+| Chat stream | `useChat` + `DefaultChatTransport` in `features/<x>/hooks/` |
+| URL / chat session | `chatId` in the route; `prompt` in the query |
+| Global client store | **Not** by default (no Redux/Zustand unless an explicit change) |
+
+Typical agent flow:
+
+```text
+UI (features/builder) → POST /api/agent/chat → handleChatStream(mastra) → LLM
+```
+
+### Testing Framework
+
+| Layer | Tool | Config |
+|-------|------|--------|
+| Unit / component | Vitest + Testing Library + jsdom | `vitest.config.ts`, `src/test/setup.ts` |
+| E2E | Playwright | `playwright.config.ts`, `e2e/` |
+
+Commands: `npm test`, `npm run test:watch`, `npm run test:e2e`, `npm run test:e2e:ui`. Details in [Testing Standards](#testing-standards).
+
+### Development Tools
+
+| Tool | Use |
+|------|-----|
+| ESLint (`eslint-config-next`) | `npm run lint` |
+| TypeScript | `tsc` / IDE check; strict |
+| Astryx CLI | discover components / templates / docs |
+| OpenSpec | `openspec/` + `/opsx:*` |
+| Env | `frontend/.env` (local) + `.env.example` (docs) |
 
 ---
 
-## 7. UI (Astryx)
+## Coding Standards
 
-- Descubrir con `npx astryx build|component|docs` desde `frontend/`.
-- Sin `<div>` de layout; tokens semánticos; frame-first (ver design guideline).
-- Un feature no inventa su propio design system.
+### Language and Naming Conventions
+
+- TypeScript `strict`; avoid `any`.
+- Domain names: `BuilderChatPanel`, `projectTitleFromPrompt` — not `DataView2` / catch-all `utils.ts`.
+- Types in `model/types.ts` (or `model/types/<name>.ts`); no domain types inside `.tsx` except local `Props`.
+- Typed constants / mocks in `model/`; mappers in `model/mappers.ts`.
+- Feature public API via `index.ts` (controlled re-exports).
+
+### File Naming
+
+| Kind | Convention | Examples |
+|------|------------|----------|
+| React components / pages | `PascalCase.tsx` | `BuilderPage.tsx`, `ChatComposer.tsx` |
+| Hooks | `use-<name>.ts(x)` (kebab) | `use-builder-chat.ts` |
+| Pure helpers / lib | `kebab-case.ts` | `message-parts.ts`, `project-title.ts` |
+| Types / mappers / mocks | `kebab-case.ts` under `model/` | `types.ts`, `mappers.ts` |
+| Route Handlers | `route.ts` (Next convention) | `app/api/agent/chat/route.ts` |
+| Tests | mirror source + `.test.ts(x)` | `project-title.test.ts`, `ChatComposer.test.tsx` |
+| E2E | `kebab-case.spec.ts` | `e2e/builder.spec.ts` |
+| Prompts | `vN.<role>.njk` | `prompts/chat/v1.system.njk` |
+| Feature barrel | `index.ts` | `features/builder/index.ts` |
+
+Rules:
+
+1. One primary export per file when practical; filename matches the main symbol (`ChatComposer.tsx` → `ChatComposer`).
+2. Prefer kebab for non-component modules; PascalCase only for React component files.
+3. Do not invent catch-alls (`helpers.ts`, `misc.ts`, `utils.ts`) — name by domain responsibility.
+4. Colocate tests next to the unit under test (or under `e2e/` for flows).
+
+### Component Conventions
+
+- Prefer Server Components; `"use client"` only where state, effects, or browser APIs are required.
+- UI = presentation. Reusable logic in `lib/` / hooks; business fetch in `api/` or Route Handlers.
+- Import Astryx from `@astryxdesign/core/<Name>` — no pointless wrappers.
+- Discover with `npx astryx build|component|docs` before inventing markup.
+- No layout `<div>`s; use DS stacks / grids / layout.
+- Component props first; otherwise `style` / `className` with tokens `var(--color-*|--spacing-*|--radius-*)`.
+
+### State Management
+
+- UI state: local to the Client Component or feature hook (`features/<x>/hooks/`).
+- Do not lift state into `app/` or global providers without need.
+- Streams / async UI: prefer AI SDK patterns (`status`, `messages`) or feature hooks; clean Strict Mode guards (per-instance refs, not fragile module-level Sets).
+- Network / agent errors: surface in UI (e.g. `ChatComposer` `status`) without leaking secrets.
+
+### Service Layer Architecture
+
+| Layer | Responsibility |
+|-------|----------------|
+| `features/<x>/api/` | Typed adapters to real **FastAPI** (OpenAPI). Map DTO → model. |
+| `app/api/**/route.ts` | Next Route Handlers (agent, BFF). Thin; no JSX. |
+| `src/mastra/` | Agents, prompts, model config — LLM runtime. |
+| `features/<x>/lib/` | Pure: validation, formatters, message-part extractors. |
+
+Rules:
+
+1. Do not invent HTTP shapes: use existing FastAPI or a contract defined in the change’s OpenSpec/design.
+2. UI should not know raw wire JSON when avoidable (mappers).
+3. Agent chat is **Next**, not FastAPI (unless an explicit ticket says otherwise).
+4. Secrets are server-side only; client gets `NEXT_PUBLIC_*` only.
 
 ---
 
-## 8. API hacia el backend
+## UI/UX Standards
 
-- Cada feature habla con el backend desde `features/<x>/api/` (funciones tipadas).
-- Contratos alineados al backend (OpenAPI / rutas reales); no inventar shapes.
-- Mapear DTO → model del feature en `model/mappers.ts`; types del wire/model en `model/types.ts`; la UI no conoce JSON crudo del wire si se puede evitar.
-- Errores: tipar y superficiear de forma consistente (toast/banner del DS cuando exista patrón).
+Look source of truth: **`docs/design_guideline.md`** (product). Operational summary:
 
----
-
-## 9. Código limpio (prácticas)
-
-- Nombres que digan el dominio (`ProjectCanvas`, no `DataView2`).
-- Funciones pequeñas; early return; evitar abstracciones prematuras.
-- No `any`; preferir types de `model/` / `entities/` (archivos aparte).
-- Colocar tests junto al feature (`features/chat/lib/formatTitle.test.ts`, `ui/….test.tsx`).
-- E2E de flujos/rutas en `frontend/e2e/<feature>.spec.ts` (Playwright).
-- Comandos (desde `frontend/`):
-  - `npm test` — Vitest (unit/component)
-  - `npm run test:watch` — Vitest watch
-  - `npm run test:e2e` — Playwright
-  - `npm run test:e2e:ui` — Playwright UI mode
-- Preferir tests de `lib/` / `model/` para lógica pura; Playwright para rutas y flujos. RTL (`*.test.tsx`) cuando la UI del feature tenga lógica propia (no para re-testear el Design System).
-- ESLint (`npm run lint`) limpio en el cambio.
-- Commits/PRs solo si el usuario lo pide (ver root `AGENTS.md`).
+- Name the **surface** before designing (landing / builder / chat / …).
+- Frame first: `Layout` / `AppShell` / `ChatLayout` per surface (`npx astryx docs layout`).
+- Theme Neutral, mode `system`, accent `--color-accent`. Do not override `--color-*` in `:root`.
+- Cards only for standalone interactive widgets; dense lists = Table/List/Item.
+- **Copy:** English for now (Rioplatense = follow-up; do not migrate in enrichments unless an explicit ticket).
+- a11y: labels on icon-only controls (`Dictate`, `Send`, etc.).
+- Mic / model selector: visual-only until a change asks for real wiring.
 
 ---
 
-## 10. Checklist antes de merge (front)
+## Testing Standards
 
-- [ ] ¿La ruta en `app/` solo compone features?
-- [ ] ¿El código nuevo vive bajo `features/<capability>/` (o `shared/` / `entities/` justificado)?
-- [ ] ¿Los types de dominio están en `model/types*` (o `entities/`), no embebidos en UI?
-- [ ] ¿Las funciones reutilizables están en `lib/` / `model/` / `api/`, desacopladas de JSX?
-- [ ] ¿Cumple Astryx + design guideline?
-- [ ] ¿Tipos de API sin inventar contratos?
-- [ ] ¿Server vs Client justificado?
-- [ ] ¿Hay Vitest y/o Playwright para el comportamiento nuevo/cambiado (`npm test`, `npm run test:e2e` si aplica)?
+1. Every front behavior change **must** add/update Vitest and/or Playwright aligned to OpenSpec scenarios.
+2. Placement:
+   - Unit: `features/<x>/**/*.test.ts(x)`, `src/mastra/**/*.test.ts`, helpers next to the Route Handler.
+   - Component: `features/<x>/ui/*.test.tsx` — feature logic, **do not** re-test Astryx.
+   - E2E: `e2e/<feature>.spec.ts`.
+3. Prefer Vitest for pure logic; Playwright for routes/flows.
+4. Mock `POST /api/agent/chat` (and other APIs) in E2E; **do not** require LLM API keys in CI.
+5. Manual smoke with keys only if the ticket DoD asks for it (local, not CI).
+6. Commands from `frontend/`: `npm test`, `npm run test:watch`, `npm run test:e2e`, `npm run test:e2e:ui`.
+
+---
+
+## Configuration Standards
+
+| Concern | Where / rule |
+|---------|----------------|
+| Local env | `frontend/.env` — **do not** commit |
+| Env docs | `frontend/.env.example` without secrets |
+| Agent keys / models | `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `MASTRA_OPENAI_MODEL`, `MASTRA_ANTHROPIC_MODEL` (ids from `mastra/models/config.ts`) |
+| Next config | `next.config.ts` — e.g. `serverExternalPackages: ["@mastra/*"]` |
+| Paths | `tsconfig` `@/*` → `src/*` |
+| After editing `.env` | Restart `npm run dev` (Next loads env at startup) |
+| OpenSpec | Change folder = Linear id lowercased (`ast-5`) |
+
+---
+
+## Performance Best Practices
+
+- Server Components by default; minimize Client islands.
+- Avoid unnecessary client waterfalls; prefer server props / RSC.
+- Streams: `runtime = "nodejs"` on agent routes; set `maxDuration` accordingly; do not block the event loop with heavy sync work in the handler.
+- Lists / chat: stable keys (`message.id`); avoid recreating transports / useless `useMemo` every render (stable transport per hook).
+- Images / media: Astryx components and patterns; do not invent heavy CSS.
+- E2E tests: mock the network so CI does not depend on LLM latency.
+- Do not log huge payloads or secrets in prod.
+
+---
+
+## AI agent (Mastra)
+
+Agent runtime runs in **Node inside Next**, not FastAPI. Roadmap: `docs/agent-roadmap.md`. Spec: `openspec/specs/mastra-chat-agent/`.
+
+```text
+frontend/src/mastra/
+  index.ts     # new Mastra({ agents })
+  agents/      # stable id e.g. chat-agent
+  prompts/     # *.njk + typed render (throwOnUndefined)
+  models/      # catalog + OpenAI→Anthropic fallbacks
+```
+
+| Concern | Where |
+|---------|--------|
+| HTTP | `app/api/agent/…` (today `POST /api/agent/chat` + AI SDK UI stream) |
+| Consuming UI | `features/<capability>/` (`useChat`, Astryx bubbles) — **never** under `mastra/` |
+| Agent id (AI SDK) | `agentId: 'chat-agent'` (`getAgentById`) |
+
+Rules:
+
+1. `mastra/` ≠ feature UI.
+2. Bridges `handleChatStream` / `useChat` live in route + feature; breaking HTTP → OpenSpec.
+3. Do not leak API keys; sanitize errors to the client; keep detail in server logs.
+4. Vitest under `src/mastra/**`; no real LLM in unit tests.
+
+---
+
+## Pre-merge checklist (front)
+
+- [ ] Is `app/` only composing features / thin Route Handlers?
+- [ ] Is new code under `features/<capability>/` (or justified `shared/` / `entities/` / `mastra/`)?
+- [ ] Are types in `model/types*` (or `entities/`), not embedded in UI?
+- [ ] Are helpers in `lib/` / `model/` / `api/`, decoupled from JSX?
+- [ ] Does it follow Astryx + design guideline + English copy?
+- [ ] Are HTTP contracts real (FastAPI or OpenSpec), with no invented shapes?
+- [ ] Is Server vs Client justified?
+- [ ] Is there Vitest and/or Playwright for the changed behavior?
+- [ ] If agent-touched: `src/mastra/` + `app/api/agent/…`, no UI in `mastra/`, `.env.example` up to date?
+- [ ] Does `npm run lint` (+ `npm test` / e2e if applicable) pass?
