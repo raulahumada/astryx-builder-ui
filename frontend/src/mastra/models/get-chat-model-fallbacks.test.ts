@@ -21,17 +21,17 @@ afterEach(() => {
 describe("getChatModelFallbacks", () => {
   it("reads primary and fallback from env when enabled", () => {
     process.env.MASTRA_OPENAI_MODEL = "openai/gpt-4o-mini";
-    process.env.MASTRA_ANTHROPIC_MODEL = "anthropic/claude-3-5-haiku-latest";
+    process.env.MASTRA_ANTHROPIC_MODEL = "anthropic/claude-haiku-4-5-20251001";
 
     expect(getChatModelFallbacks()).toEqual([
       { model: "openai/gpt-4o-mini", maxRetries: 2 },
-      { model: "anthropic/claude-3-5-haiku-latest", maxRetries: 2 },
+      { model: "anthropic/claude-haiku-4-5-20251001", maxRetries: 2 },
     ]);
   });
 
   it("throws when env model is missing", () => {
     delete process.env.MASTRA_OPENAI_MODEL;
-    process.env.MASTRA_ANTHROPIC_MODEL = "anthropic/claude-3-5-haiku-latest";
+    process.env.MASTRA_ANTHROPIC_MODEL = "anthropic/claude-haiku-4-5-20251001";
 
     expect(() => getChatModelFallbacks()).toThrow(
       /MASTRA_OPENAI_MODEL is required/,
@@ -40,7 +40,7 @@ describe("getChatModelFallbacks", () => {
 
   it("throws when env model is not in enabled config", () => {
     process.env.MASTRA_OPENAI_MODEL = "openai/not-a-real-model";
-    process.env.MASTRA_ANTHROPIC_MODEL = "anthropic/claude-3-5-haiku-latest";
+    process.env.MASTRA_ANTHROPIC_MODEL = "anthropic/claude-haiku-4-5-20251001";
 
     expect(() => getChatModelFallbacks()).toThrow(
       /not an enabled openai model/,

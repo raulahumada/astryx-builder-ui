@@ -16,16 +16,51 @@ const MOCK_CHAT_SSE = [
   "",
 ].join("\n");
 
-async function mockAgentChat(page: import("@playwright/test").Page) {
-  await page.route("**/api/agent/chat", async (route) => {
-    if (route.request().method() !== "POST") {
-      await route.fallback();
+async function mockAgentChat(
+  page: import("@playwright/test").Page,
+  options?: {
+    historyMessages?: Array<{
+      id: string;
+      role: "user" | "assistant";
+      parts: Array<{ type: "text"; text: string }>;
+    }>;
+    onPost?: (body: Record<string, unknown>) => void;
+  },
+) {
+  await page.route("**/api/agent/chat**", async (route) => {
+    const request = route.request();
+    const method = request.method();
+
+    if (method === "GET") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ messages: options?.historyMessages ?? [] }),
+      });
       return;
     }
+
+    if (method === "POST") {
+      const raw = request.postData() ?? "{}";
+      let body: Record<string, unknown> = {};
+      try {
+        body = JSON.parse(raw) as Record<string, unknown>;
+      } catch {
+        body = {};
+      }
+      options?.onPost?.(body);
+      await route.fulfill({
+        status: 200,
+        contentType: "text/event-stream",
+        body: MOCK_CHAT_SSE,
+      });
+      return;
+    }
+
     await route.fulfill({
-      status: 200,
-      contentType: "text/event-stream",
-      body: MOCK_CHAT_SSE,
+      status: 405,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "Method not allowed" }),
     });
   });
 }
@@ -39,8 +74,15 @@ test.describe("builder", () => {
     ).toBeVisible();
   });
 
-  test("streams assistant text after composer submit", async ({ page }) => {
-    await mockAgentChat(page);
+  test("streams assistant text after composer submit and sends thread", async ({
+    page,
+  }) => {
+    let postedBody: Record<string, unknown> | undefined;
+    await mockAgentChat(page, {
+      onPost: (body) => {
+        postedBody = body;
+      },
+    });
     await page.goto("/chats/demo");
 
     const composer = page.getByRole("textbox", { name: "Message input" });
@@ -52,5 +94,29 @@ test.describe("builder", () => {
     await expect(
       page.getByText("Your Astryx generation will show here."),
     ).toBeVisible();
+
+    await expect.poll(() => postedBody?.thread).toBe("demo");
+  });
+
+  test("hydrates recalled history on load", async ({ page }) => {
+    await mockAgentChat(page, {
+      historyMessages: [
+        {
+          id: "u1",
+          role: "user",
+          parts: [{ type: "text", text: "Prior user turn" }],
+        },
+        {
+          id: "a1",
+          role: "assistant",
+          parts: [{ type: "text", text: "Prior assistant turn" }],
+        },
+      ],
+    });
+
+    await page.goto("/chats/demo");
+
+    await expect(page.getByText("Prior user turn")).toBeVisible();
+    await expect(page.getByText("Prior assistant turn")).toBeVisible();
   });
 });

@@ -16,9 +16,9 @@ export const ENABLED_MODELS = [
     label: "GPT-4o",
   },
   {
-    id: "anthropic/claude-3-5-haiku-latest",
+    id: "anthropic/claude-haiku-4-5-20251001",
     provider: "anthropic",
-    label: "Claude 3.5 Haiku",
+    label: "Claude Haiku 4.5",
   },
   {
     id: "anthropic/claude-sonnet-4-5",

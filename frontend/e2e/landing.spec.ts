@@ -10,6 +10,7 @@ test.describe("landing", () => {
       page.getByRole("textbox", { name: "Message input" }),
     ).toBeVisible();
     await expect(page.getByRole("button", { name: "Contact Form" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Calculator" })).toBeVisible();
   });
 
   test("submitting a prompt navigates to a chat session", async ({ page }) => {

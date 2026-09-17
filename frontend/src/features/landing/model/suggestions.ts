@@ -1,5 +1,6 @@
 import {
   ArrowPathIcon,
+  CalculatorIcon,
   ChartBarIcon,
   EnvelopeIcon,
   MicrophoneIcon,
@@ -37,10 +38,10 @@ export const SUGGESTION_SETS: SuggestionChip[][] = [
       icon: PuzzlePieceIcon,
     },
     {
-      id: "finance-calculator",
-      label: "Finance Calculator",
-      prompt: "Build a finance calculator for compound interest",
-      icon: ChartBarIcon,
+      id: "calculator",
+      label: "Calculator",
+      prompt: "Build a calculator with basic arithmetic operations",
+      icon: CalculatorIcon,
     },
   ],
   [
@@ -63,10 +64,10 @@ export const SUGGESTION_SETS: SuggestionChip[][] = [
       icon: PhotoIcon,
     },
     {
-      id: "todo",
-      label: "Todo App",
-      prompt: "Build a todo app with add, complete, and filter",
-      icon: PuzzlePieceIcon,
+      id: "finance-calculator",
+      label: "Finance Calculator",
+      prompt: "Build a finance calculator for compound interest",
+      icon: ChartBarIcon,
     },
   ],
 ];
