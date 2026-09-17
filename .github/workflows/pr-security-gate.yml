@@ -1,6 +1,6 @@
-# Calls raulahumada/security-jev reusable workflow (product repo).
-# Requires repo secret: TYPESAFE_API_KEY
-# Optional var: FAIL_ON_FINDINGS=true to block merge
+# Calls raulahumada/security-jev (product).
+# Secret on THIS repo: TYPESAFE_API_KEY (BYO mode today)
+# Blocking: fail_on_findings true + require check "PR Security Gate" on main
 
 name: PR Security Gate
 
@@ -14,9 +14,10 @@ permissions:
 
 jobs:
   call-security-jev:
-    name: PR Security Gate
+    name: Jev review
     uses: raulahumada/security-jev/.github/workflows/pr-security-gate.yml@main
     with:
-      fail_on_findings: ${{ vars.FAIL_ON_FINDINGS || 'false' }}
+      # Block merge when security rules fire (still need branch protection).
+      fail_on_findings: ${{ vars.FAIL_ON_FINDINGS || 'true' }}
     secrets:
       TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
